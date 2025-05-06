@@ -23,6 +23,7 @@ help:
 	@echo "  make clean         - Elimina el contenedor"
 	@echo "  make shell         - Entra al contenedor"
 	@echo "  make psql          - Entra al postgres"
+	@echo "  make full          - Fa tota la instal·lació"
 	@echo ""
 
 # Crea el contenedor LXC
@@ -102,3 +103,32 @@ shell:
 psql:
 	@echo "$(GREEN)Conectándose a PostgreSQL como administrador...$(NC)"
 	@lxc exec $(CONTAINER_NAME) -- su - postgres -c "psql"
+
+# Instala y configura todo el entorno y muestra información detallada
+.PHONY: full
+full: create install configure create-db
+	@echo "$(GREEN)=======================================================$(NC)"
+	@echo "$(GREEN)          INSTALACIÓN COMPLETA EXITOSA                 $(NC)"
+	@echo "$(GREEN)=======================================================$(NC)"
+	@echo ""
+	@echo "$(GREEN)INFORMACIÓN DE CONEXIÓN:$(NC)"
+	@echo ""
+	@IP=$$(lxc list $(CONTAINER_NAME) -c 4 | grep -v IPV4 | tr -d "[:blank:]") && \
+	echo "IP del contenedor: $$IP" && \
+	echo "" && \
+	echo "$(GREEN)Para conectar por línea de comandos:$(NC)" && \
+	echo "  psql -h $$IP -U $(PG_USER) -d $(PG_DATABASE)" && \
+	echo "" && \
+	echo "$(GREEN)Para conectar desde Spring Boot (application.properties):$(NC)" && \
+	echo "  spring.datasource.url=jdbc:postgresql://$$IP:5432/$(PG_DATABASE)" && \
+	echo "  spring.datasource.username=$(PG_USER)" && \
+	echo "  spring.datasource.password=$(PG_PASSWORD)" && \
+	echo "" && \
+	echo "$(GREEN)Para conectar usando JDBC:$(NC)" && \
+	echo "  URL: jdbc:postgresql://$$IP:5432/$(PG_DATABASE)" && \
+	echo "  Usuario: $(PG_USER)" && \
+	echo "  Contraseña: $(PG_PASSWORD)" && \
+	echo "" && \
+	echo "$(GREEN)Comandos útiles:$(NC)" && \
+	echo "  make shell - Para entrar al contenedor" && \
+	echo "  make psql  - Para entrar a PostgreSQL directamente"
