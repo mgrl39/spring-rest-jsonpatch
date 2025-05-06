@@ -20,10 +20,12 @@ help:
 	@echo "  make configure     - Configura PostgreSQL per a accés extern"
 	@echo "  make create-db     - Crea la base de dades i l'usuari"
 	@echo "  make all           - Executa tot el procés (create, install, configure, create-db)"
-	@echo "  make clean         - Elimina el contenidor"
+	@echo "  make clean         - Elimina la base de dades i l'usuari"
+	@echo "  make fclean        - Elimina completament el contenidor"
 	@echo "  make shell         - Entra al contenidor"
 	@echo "  make psql          - Entra al PostgreSQL"
 	@echo "  make full          - Fa tota la instal·lació"
+	@echo "  make info          - Mostra informació de connexió"
 	@echo ""
 
 # Crea el contenidor LXC
@@ -75,19 +77,32 @@ create-db: configure
 	@echo "Pots connectar-te a la base de dades amb:"
 	@echo "  psql -h <IP-CONTENIDOR> -U $(PG_USER) -d $(PG_DATABASE)"
 
-
 # Executa tot el procés
 .PHONY: all
 all: create install configure create-db
 
-# Neteja (elimina el contenidor)
+# Neteja només la base de dades i l'usuari
 .PHONY: clean
 clean:
-	@echo "$(GREEN)Eliminant contenidor $(CONTAINER_NAME)...$(NC)"
+	@echo "$(GREEN)Eliminant base de dades i usuari...$(NC)"
+	@if lxc info $(CONTAINER_NAME) >/dev/null 2>&1; then \
+		lxc exec $(CONTAINER_NAME) -- bash -c "\
+			su - postgres -c \"psql -c \\\"DROP DATABASE IF EXISTS $(PG_DATABASE);\\\"\" && \
+			su - postgres -c \"psql -c \\\"DROP USER IF EXISTS $(PG_USER);\\\"\" \
+		" && \
+		echo "Base de dades i usuari eliminats correctament."; \
+	else \
+		echo "El contenidor no existeix."; \
+	fi
+
+# Neteja completa (elimina el contenidor)
+.PHONY: fclean
+fclean:
+	@echo "$(GREEN)Eliminant completament el contenidor $(CONTAINER_NAME)...$(NC)"
 	@if lxc info $(CONTAINER_NAME) >/dev/null 2>&1; then \
 		lxc stop $(CONTAINER_NAME) --force; \
 		lxc delete $(CONTAINER_NAME); \
-		echo "Contenidor eliminat."; \
+		echo "Contenidor eliminat completament."; \
 	else \
 		echo "El contenidor no existeix."; \
 	fi
@@ -97,7 +112,6 @@ clean:
 shell:
 	@echo "$(GREEN)Accedint al contenidor $(CONTAINER_NAME)...$(NC)"
 	@lxc exec $(CONTAINER_NAME) -- bash
-
 
 # Accedeix directament a PostgreSQL com a usuari postgres (administrador)
 .PHONY: psql
@@ -133,3 +147,24 @@ full: create install configure create-db
 	echo "$(GREEN)Comandes útils:$(NC)" && \
 	echo "  make shell - Per entrar al contenidor" && \
 	echo "  make psql  - Per entrar a PostgreSQL directament"
+
+# Mostra informació de connexió
+.PHONY: info
+info:
+	@echo "$(GREEN)=======================================================$(NC)"
+	@echo "$(GREEN)          INFORMACIÓ DE CONNEXIÓ                       $(NC)"
+	@echo "$(GREEN)=======================================================$(NC)"
+	@echo ""
+	@if lxc info $(CONTAINER_NAME) >/dev/null 2>&1; then \
+		IP=$$(lxc exec $(CONTAINER_NAME) -- ip -4 addr show eth0 | grep -oP '(?<=inet\s)\d+(\.\d+){3}') && \
+		echo "$(GREEN)IP del contenidor:$(NC) $$IP" && \
+		echo "$(GREEN)Port:$(NC) 5432" && \
+		echo "$(GREEN)Base de dades:$(NC) $(PG_DATABASE)" && \
+		echo "$(GREEN)Usuari:$(NC) $(PG_USER)" && \
+		echo "$(GREEN)Contrasenya:$(NC) $(PG_PASSWORD)" && \
+		echo "" && \
+		echo "$(GREEN)URL de connexió JDBC:$(NC)" && \
+		echo "jdbc:postgresql://$$IP:5432/$(PG_DATABASE)"; \
+	else \
+		echo "El contenidor no existeix."; \
+	fi
