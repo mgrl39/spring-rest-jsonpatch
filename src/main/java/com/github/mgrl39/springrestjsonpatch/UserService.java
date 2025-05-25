@@ -57,6 +57,18 @@ public class UserService {
     }
 
     /**
+     * Reemplaça completament un usuari existent.
+     * Si l'usuari no existeix, retorna null.
+     *
+     * @param user Noves dades de l'usuari
+     * @return L'usuari actualitzat o null si no existeix
+     */
+    public User updateUser(User user) {
+        if (userRepository.existsById(user.getId())) return userRepository.save(user);
+        return null;
+    }
+
+    /**
      * Elimina un usuari del sistema pel seu identificador.
      * Si l'usuari no existeix, no fa res.
      *

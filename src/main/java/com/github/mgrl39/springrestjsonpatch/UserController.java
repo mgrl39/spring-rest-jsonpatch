@@ -1,5 +1,8 @@
 package com.github.mgrl39.springrestjsonpatch;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.fge.jsonpatch.JsonPatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
@@ -25,6 +28,12 @@ public class UserController {
      */
     @Autowired
     UserService userService;
+
+    /**
+     * Mapper per a operacions JSON
+     */
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * Obté tots els usuaris del sistema.
@@ -63,11 +72,53 @@ public class UserController {
     }
 
     /**
+     * Actualitza completament un usuari existent.
+     * Reemplaça totes les dades de l'usuari amb les noves proporcionades.
+     *
+     * @param userDto DTO amb les noves dades de l'usuari
+     * @return DTO de l'usuari actualitzat
+     */
+    public UserDto updateUser(UserDto userDto) {
+        User user = new User(userDto);
+        return new UserDto(userService.updateUser(user));
+    }
+
+    /**
      * Elimina un usuari del sistema pel seu identificador.
      *
      * @param id Identificador únic de l'usuari a eliminar
      */
     public void remove(Integer id) {
         userService.deleteById(id);
+    }
+
+    /**
+     * Actualitza parcialment un usuari utilitzant JSON Patch.
+     * Aplica les operacions del patch sobre l'usuari existent.
+     *
+     * @param id Identificador únic de l'usuari
+     * @param patch Document JSON Patch amb les operacions a aplicar
+     * @return DTO de l'usuari actualitzat
+     * @throws RuntimeException si hi ha errors en aplicar el patch
+     */
+    public UserDto patchUser(Integer id, JsonPatch patch) {
+        try {
+            // Obtenim l'usuari existent
+            User user = userService.getUserbyId(id);
+            if (user == null) throw new RuntimeException("Usuari no trobat");
+            
+            // Convertim l'usuari a JsonNode
+            JsonNode userNode = objectMapper.convertValue(user, JsonNode.class);
+            // Apliquem el patch
+            JsonNode patchedNode = patch.apply(userNode);
+            // Convertim el resultat de nou a User
+            User patchedUser = objectMapper.treeToValue(patchedNode, User.class);
+            patchedUser.setId(id); // Assegurem que l'ID es manté
+            // Desem els canvis
+            User updatedUser = userService.updateUser(patchedUser);
+            return new UserDto(updatedUser);
+        } catch (Exception e) {
+            throw new RuntimeException("Error al aplicar el patch: " + e.getMessage());
+        }
     }
 }

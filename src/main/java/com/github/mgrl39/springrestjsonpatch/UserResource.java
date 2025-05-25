@@ -1,5 +1,6 @@
 package com.github.mgrl39.springrestjsonpatch;
 
+import com.github.fge.jsonpatch.JsonPatch;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -66,6 +67,23 @@ public class UserResource {
     }
 
     /**
+     * Reemplaça completament un usuari existent.
+     * PUT /api/v0/users/{id}
+     *
+     * @param id Identificador únic de l'usuari a reemplaçar
+     * @param userDto Noves dades de l'usuari
+     * @return ResponseEntity amb l'usuari actualitzat i codi HTTP 200 si tot és correcte
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<UserDto> replaceUser(
+            @PathVariable Integer id,
+            @RequestBody UserDto userDto) {
+        userDto.setId(id); // Assegurem que l'ID sigui el correcte
+        UserDto updated = userController.updateUser(userDto);
+        return ResponseEntity.ok().body(updated);
+    }
+
+    /**
      * Elimina un usuari del sistema.
      * DELETE /api/v0/users/{id}
      *
@@ -76,5 +94,25 @@ public class UserResource {
     public ResponseEntity<Void> remove(@PathVariable Integer id) {
         userController.remove(id);
         return ResponseEntity.ok().body(null);
+    }
+
+    /**
+     * Actualitza parcialment un usuari utilitzant JSON Patch.
+     * PATCH /api/v0/users/{id}
+     * Exemple de patch:
+     * [
+     *   { "op": "replace", "path": "/email", "value": "nou@email.com" }
+     * ]
+     *
+     * @param id Identificador únic de l'usuari a actualitzar
+     * @param patch Document JSON Patch amb les operacions a aplicar
+     * @return ResponseEntity amb l'usuari actualitzat i codi HTTP 200 si tot és correcte
+     */
+    @PatchMapping(path = "/{id}", consumes = "application/json-patch+json")
+    public ResponseEntity<UserDto> patchUser(
+            @PathVariable Integer id,
+            @RequestBody JsonPatch patch) {
+        UserDto updated = userController.patchUser(id, patch);
+        return ResponseEntity.ok().body(updated);
     }
 }
