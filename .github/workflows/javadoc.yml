@@ -29,7 +29,5 @@ jobs:
       - name: Subir JavaDoc a gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: target/site
+          folder: target/reports/apidocs
           branch: gh-pages
-          clean-exclude: |
-            .nojekyll
