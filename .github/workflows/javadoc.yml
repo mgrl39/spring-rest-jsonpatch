@@ -1,0 +1,33 @@
+name: JavaDoc
+
+on:
+  push:
+    branches: ["**"]
+
+permissions:
+  contents: write
+
+jobs:
+  generate-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del repo
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: "21"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Compilar y generar JavaDoc
+        run: |
+          mvn clean compile
+          mvn javadoc:javadoc
+
+      - name: Subir JavaDoc a gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: target/reports/apidocs
+          branch: gh-pages
