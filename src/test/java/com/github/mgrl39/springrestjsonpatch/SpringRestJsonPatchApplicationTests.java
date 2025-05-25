@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class RestService4ApplicationTests {
+class SpringRestJsonPatchApplicationTests {
 
 	@Test
 	void contextLoads() {
