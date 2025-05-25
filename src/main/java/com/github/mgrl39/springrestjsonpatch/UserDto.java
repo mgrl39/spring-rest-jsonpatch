@@ -1,4 +1,4 @@
-package com.example.rest_service_4;
+package com.github.mgrl39.springrestjsonpatch;
 
 import lombok.Data;
 

@@ -1,10 +1,9 @@
-package com.example.rest_service_4;
+package com.github.mgrl39.springrestjsonpatch;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 public class UserController {
