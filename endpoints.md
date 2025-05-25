@@ -23,3 +23,10 @@ curl -X POST http://localhost:8080/api/v0/users \
 ```bash
 curl -X DELETE http://localhost:8080/api/v0/users/4
 ```
+
+## 5. Reemplaçar usuari per ID
+```bash
+curl -X PUT http://localhost:8080/api/v0/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{"email": "nouemail@cat.cat", "fullName": "Nom Reemplaçat", "password": "nova"}'
+```
